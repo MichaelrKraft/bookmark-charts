@@ -3,7 +3,7 @@ services:
     name: bookmark-charts-api
     runtime: node
     rootDir: api
-    plan: starter
+    plan: free
     buildCommand: npm install
     startCommand: node server.js
     healthCheckPath: /health
