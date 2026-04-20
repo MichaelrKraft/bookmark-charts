@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bookmark Charts — Your bookmarks are a time capsule of who you were trying to become</title>
+<meta name="description" content="Drop your bookmarks.html and see the timeline of every version of yourself you abandoned. 100% private, runs entirely in your browser. Free, no signup.">
+<meta property="og:title" content="Bookmark Charts — Your bookmarks, decoded">
+<meta property="og:description" content="Your bookmarks are a time capsule of every version of yourself you gave up on. Free tool, runs in your browser, built with Coder1.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://bookmark-charts.onrender.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0a0a'/%3E%3Cpath d='M10 8h12v18l-6-4-6 4z' fill='%2322d3ee'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--border:#2a2a2a;--text:#e2e8f0;--muted:#64748b;--accent:#22d3ee;--accent2:#8b5cf6}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+code{font-family:'JetBrains Mono',Menlo,Monaco,Consolas,monospace;background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:.9em;color:var(--accent)}
+
+/* Top nav */
+nav{padding:20px 32px;display:flex;align-items:center;justify-content:space-between;max-width:1400px;margin:0 auto;position:sticky;top:0;z-index:100;background:rgba(10,10,10,.8);backdrop-filter:blur(12px)}
+nav .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+nav .brand img{height:40px;width:auto;display:block}
+nav .cta{background:var(--accent);color:#0a0a0a;font-weight:700;padding:8px 18px;border-radius:8px;font-size:13px;transition:.15s}
+nav .cta:hover{opacity:.9}
+
+/* Hero */
+.hero{padding:80px 32px 60px;text-align:center;max-width:1100px;margin:0 auto;position:relative}
+.hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:800px;height:600px;background:radial-gradient(ellipse,rgba(34,211,238,.12),transparent 60%);pointer-events:none;z-index:-1}
+.eyebrow{display:inline-block;padding:6px 14px;border-radius:20px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:var(--accent);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:28px}
+h1.hero-title{font-size:clamp(40px,7vw,84px);font-weight:800;line-height:1.05;letter-spacing:-.02em;margin-bottom:28px;max-width:900px;margin-left:auto;margin-right:auto}
+h1.hero-title em{background:linear-gradient(135deg,#22d3ee,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent;font-style:normal}
+.hero-sub{font-size:clamp(17px,2vw,20px);color:var(--muted);max-width:680px;margin:0 auto 40px;line-height:1.5}
+.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.btn-primary{background:var(--accent);color:#0a0a0a;font-weight:700;padding:16px 32px;border-radius:12px;font-size:15px;transition:.15s;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 12px 40px rgba(34,211,238,.3)}
+.btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text);font-weight:500;padding:15px 24px;border-radius:12px;font-size:15px;transition:.15s;cursor:pointer}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.hero-trust{font-size:13px;color:var(--muted)}
+.hero-trust strong{color:var(--text)}
+
+/* Preview image */
+.preview-wrap{max-width:1100px;margin:0 auto;padding:0 32px 100px;position:relative}
+.preview-frame{border:1px solid var(--border);border-radius:20px;overflow:hidden;background:var(--bg2);box-shadow:0 40px 80px -20px rgba(0,0,0,.7),0 0 120px -30px rgba(34,211,238,.15);position:relative}
+.preview-frame::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 70%,var(--bg) 100%);pointer-events:none;z-index:1}
+.preview-img{width:100%;display:block;background:var(--bg2)}
+.preview-mock{width:100%;aspect-ratio:16/9;display:grid;grid-template-columns:220px 1fr;background:var(--bg2)}
+.pm-side{background:var(--bg3);border-right:1px solid var(--border);padding:16px}
+.pm-side-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);margin-bottom:12px;opacity:.5}
+.pm-side-dot:nth-child(2){background:#8b5cf6}.pm-side-dot:nth-child(3){background:#ef4444}.pm-side-dot:nth-child(4){background:#10b981}
+.pm-main{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pm-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px}
+.pm-big{font-size:32px;font-weight:800;color:var(--accent);margin-bottom:4px}
+.pm-small{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.pm-donut{width:120px;height:120px;border-radius:50%;background:conic-gradient(#22d3ee 0 25%,#8b5cf6 25% 45%,#ef4444 45% 60%,#10b981 60% 75%,#fbbf24 75% 100%);margin:0 auto;position:relative}
+.pm-donut::after{content:'';position:absolute;inset:20px;background:var(--bg3);border-radius:50%}
+
+/* Sections */
+section{padding:80px 32px;max-width:1200px;margin:0 auto}
+section h2{font-size:clamp(28px,4vw,44px);font-weight:800;line-height:1.15;margin-bottom:16px;max-width:800px}
+section h2 em{background:linear-gradient(135deg,#22d3ee,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent;font-style:normal}
+section .lead{font-size:18px;color:var(--muted);max-width:680px;margin-bottom:48px;line-height:1.6}
+
+/* What you get */
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.feature{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;transition:.2s}
+.feature:hover{border-color:var(--accent);transform:translateY(-4px)}
+.feat-icon{width:40px;height:40px;border-radius:10px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px;color:var(--accent)}
+.feat-title{font-size:17px;font-weight:700;margin-bottom:8px}
+.feat-desc{font-size:14px;color:var(--muted);line-height:1.6}
+
+/* How it works */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;counter-reset:step}
+.step{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;counter-increment:step}
+.step::before{content:counter(step);position:absolute;top:-12px;left:24px;background:var(--accent);color:#0a0a0a;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;font-family:'Inter'}
+.step h3{font-size:17px;font-weight:700;margin-bottom:10px;margin-top:12px}
+.step p{font-size:14px;color:var(--muted);line-height:1.6}
+.step code{font-size:12px}
+
+/* Privacy callout */
+.privacy{background:linear-gradient(135deg,rgba(16,185,129,.08),var(--bg2));border:1px solid rgba(16,185,129,.3);border-radius:16px;padding:32px;margin-top:40px;display:flex;gap:20px;align-items:flex-start}
+.privacy-icon{flex-shrink:0;width:40px;height:40px;border-radius:10px;background:rgba(16,185,129,.15);display:flex;align-items:center;justify-content:center;color:#10b981;font-size:20px}
+.privacy-text strong{color:#10b981;display:block;margin-bottom:4px;font-size:15px}
+.privacy-text p{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* Archetype strip */
+.arch-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:32px}
+.arch-chip{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;transition:.2s}
+.arch-chip:hover{border-color:var(--accent)}
+.arch-chip-name{font-weight:700;margin-bottom:4px;font-size:14px}
+.arch-chip-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* Built with Coder1 */
+.built{background:linear-gradient(135deg,rgba(34,211,238,.06),rgba(139,92,246,.04));border:1px solid var(--border);border-radius:24px;padding:56px 40px;text-align:center;margin-top:40px}
+.built-eyebrow{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px}
+.built h3{font-size:clamp(24px,3vw,32px);font-weight:800;margin-bottom:14px;line-height:1.2}
+.built p{font-size:15px;color:var(--muted);max-width:580px;margin:0 auto 28px;line-height:1.6}
+
+/* Final CTA */
+.final-cta{text-align:center;padding:100px 32px 120px;max-width:800px;margin:0 auto}
+.final-cta h2{font-size:clamp(32px,5vw,56px);font-weight:800;line-height:1.1;margin-bottom:20px}
+.final-cta p{font-size:18px;color:var(--muted);margin-bottom:32px;line-height:1.6}
+
+/* Footer */
+footer{border-top:1px solid var(--border);padding:32px;text-align:center;font-size:12px;color:var(--muted)}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="brand" aria-label="BookmarkCharts"><img src="bmcharts-logo.png" alt="BookmarkCharts"></a>
+  <a href="app.html" class="cta">Try it free →</a>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="eyebrow">Free · Private · No signup</div>
+  <h1 class="hero-title">Your bookmarks are a <em>time capsule</em> of every version of yourself you abandoned.</h1>
+  <p class="hero-sub">Drop your <code>bookmarks.html</code> file and we'll show you the timeline. Who you were trying to become in 2019. The 347 articles you saved to "read later" and never opened. The archetype you've been quietly living into.</p>
+  <div class="hero-ctas">
+    <a href="app.html" class="btn-primary">Analyze my bookmarks →</a>
+    <a href="#how" class="btn-secondary">How does it work?</a>
+  </div>
+  <div class="hero-trust"><strong>100% private.</strong> Runs in your browser. Nothing uploaded. Close the tab and it's gone.</div>
+</header>
+
+<!-- Preview mock -->
+<div class="preview-wrap">
+  <div class="preview-frame">
+    <div class="preview-mock">
+      <div class="pm-side">
+        <div class="pm-side-dot"></div>
+        <div class="pm-side-dot"></div>
+        <div class="pm-side-dot"></div>
+        <div class="pm-side-dot"></div>
+      </div>
+      <div class="pm-main">
+        <div class="pm-card">
+          <div class="pm-small" style="color:#22d3ee;margin-bottom:6px">Your archetype</div>
+          <div style="font-size:22px;font-weight:800;margin-bottom:6px">The AI Builder</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">You're building with AI, not just watching it happen.</div>
+        </div>
+        <div class="pm-card" style="display:flex;align-items:center;justify-content:center"><div class="pm-donut"></div></div>
+        <div class="pm-card">
+          <div class="pm-small">Total bookmarks</div>
+          <div class="pm-big">3,427</div>
+        </div>
+        <div class="pm-card">
+          <div class="pm-small" style="color:#f87171">Read later graveyard</div>
+          <div class="pm-big" style="color:#f87171">247</div>
+          <div style="font-size:11px;color:var(--muted)">opened &lt;5%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- What you get -->
+<section>
+  <h2>Every thing your bookmarks <em>secretly</em> know about you.</h2>
+  <p class="lead">You've been saving to bookmarks for 10+ years. Nobody's ever read them back to you. Until now.</p>
+  <div class="feature-grid">
+    <div class="feature">
+      <div class="feat-icon">◐</div>
+      <div class="feat-title">Your archetype, assigned</div>
+      <div class="feat-desc">12 identity types based on your actual bookmark patterns. The AI Builder. The Productivity Hoarder. The Rabbit-Hole Archaeologist. Pick your flavor of delusion.</div>
+    </div>
+    <div class="feature">
+      <div class="feat-icon">⟁</div>
+      <div class="feat-title">Timeline of your interests</div>
+      <div class="feat-desc">Watch your bookmarks morph over years — from web design to crypto to AI to whatever phase you're in now. Month-by-month, category-by-category.</div>
+    </div>
+    <div class="feature">
+      <div class="feat-icon">◈</div>
+      <div class="feat-title">Force-directed graph view</div>
+      <div class="feat-desc">Every domain you've saved, clustered by category, sized by how often you came back. Some of these clusters will surprise you.</div>
+    </div>
+    <div class="feature">
+      <div class="feat-icon">⊗</div>
+      <div class="feat-title">The "read later" reveal</div>
+      <div class="feat-desc">The exact number of articles you saved with good intentions and never opened. You're going to want to screenshot this one.</div>
+    </div>
+    <div class="feature">
+      <div class="feat-icon">◊</div>
+      <div class="feat-title">Your first bookmark</div>
+      <div class="feat-desc">The oldest link in your file, with the date. A little time capsule of who you were trying to become back then.</div>
+    </div>
+    <div class="feature">
+      <div class="feat-icon">⬢</div>
+      <div class="feat-title">Shareable story card</div>
+      <div class="feat-desc">One-click PNG for X, LinkedIn, or Instagram — your archetype, your stats, your "read later" shame. Built for the feed.</div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section id="how">
+  <h2>How it works — <em>2 minutes</em> to your story.</h2>
+  <p class="lead">No account. No upload. The whole thing runs in your browser.</p>
+  <div class="steps">
+    <div class="step">
+      <h3>Export your bookmarks</h3>
+      <p>In Chrome: <code>chrome://bookmarks</code> → ⋮ → Export. You get a <code>bookmarks.html</code> file. (Works with Firefox, Safari, Arc, Brave, Edge too.)</p>
+    </div>
+    <div class="step">
+      <h3>Drop it in</h3>
+      <p>On the next page, drag your file onto the drop zone — or click to pick it. We parse it in your browser in about 3 seconds. Nothing leaves your machine.</p>
+    </div>
+    <div class="step">
+      <h3>See who you've been</h3>
+      <p>Archetype assigned. Stats tallied. Graph built. Share card ready. Explore your tabs, timelines, and the graveyard of good intentions.</p>
+    </div>
+  </div>
+  <div class="privacy">
+    <div class="privacy-icon">🔒</div>
+    <div class="privacy-text">
+      <strong>Actually private. Not "we promise" private.</strong>
+      <p>The entire app is static HTML + JavaScript. When you drop your file, it's parsed locally by your browser. No network requests, no telemetry, no account. Open DevTools and watch — the Network tab is empty. Open-source soon.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Archetypes preview -->
+<section>
+  <h2>There are <em>12 archetypes</em>. You're probably one of them.</h2>
+  <p class="lead">Based on your top categories and bookmark ratios, you get one of these. Some flattering. Some uncomfortable. All honest.</p>
+  <div class="arch-strip">
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#22d3ee">The AI Builder</div><div class="arch-chip-desc">You're building with AI, not just watching it happen.</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#8b5cf6">The Indie Hacker</div><div class="arch-chip-desc">Half your tabs are things you're shipping "next quarter, for real."</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#10b981">The Productivity Hoarder</div><div class="arch-chip-desc">You've tried every tool. You still use the Notes app.</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#fbbf24">The Eternal Student</div><div class="arch-chip-desc">Bookmarks = syllabus. There will not be a final.</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#ec4899">The Full-Stack Creator</div><div class="arch-chip-desc">Design, build, ship, already hate the hero section.</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#06b6d4">The AI Watcher</div><div class="arch-chip-desc">So much "research" you haven't built anything yet.</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#3b82f6">The Scroll Archaeologist</div><div class="arch-chip-desc">You bookmark threads like ancient scrolls.</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#ef4444">The Tutorial Tourist</div><div class="arch-chip-desc">Watched "become 10x" seventeen times. Still 1.2x.</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#a855f7">The Startup Stalker</div><div class="arch-chip-desc">You know every founder's launch tweet before they post.</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#f97316">The Deal Hunter</div><div class="arch-chip-desc">Your bookmarks are a wishlist frozen in time.</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#6366f1">The Newsroom Regular</div><div class="arch-chip-desc">Seven news sites bookmarked. You read six.</div></div>
+    <div class="arch-chip"><div class="arch-chip-name" style="color:#64748b">The Rabbit-Hole Archaeologist</div><div class="arch-chip-desc">No pattern. Every bookmark = one deep dive.</div></div>
+  </div>
+</section>
+
+<!-- Built with Coder1 -->
+<section>
+  <div class="built">
+    <div class="built-eyebrow">Built with Coder1 IDE · in one afternoon</div>
+    <h3>This whole tool was built in 4 hours with <span style="color:var(--accent)">Coder1</span> — the IDE for Claude Code.</h3>
+    <p>Coder1 turns Claude Code into a full IDE with agent supervision, live preview, session rescue, and multi-AI orchestration. If you want to build tools that know your users better than they know themselves, this is the fastest way there.</p>
+    <a href="https://coder1.ai" class="btn-primary" style="margin-top:8px">Check out Coder1 →</a>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<div class="final-cta">
+  <h2>See the timeline of every version of yourself you abandoned.</h2>
+  <p>Takes 2 minutes. Nothing uploaded. Probably uncomfortable. Definitely worth it.</p>
+  <a href="app.html" class="btn-primary">Analyze my bookmarks →</a>
+</div>
+
+<footer>
+  <div>Made with <a href="https://coder1.ai">Coder1</a> · <a href="https://github.com/MichaelrKraft/bookmark-charts">Source</a> · © 2026</div>
+</footer>
+
+</body>
+</html>

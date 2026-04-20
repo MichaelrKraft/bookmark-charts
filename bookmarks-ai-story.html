@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How AI Ate My Browser</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #141414;
+    --bg3: #1a1a1a;
+    --cyan: #22d3ee;
+    --cyan-dim: rgba(34,211,238,0.15);
+    --cyan-glow: rgba(34,211,238,0.4);
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --border: rgba(255,255,255,0.07);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 6rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(34,211,238,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .header-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 1.5rem;
+  }
+
+  header h1 {
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: #fff;
+    margin-bottom: 2rem;
+    max-width: 900px;
+  }
+
+  header h1 span { color: var(--cyan); }
+
+  .header-lede {
+    font-size: 1.2rem;
+    color: var(--muted);
+    max-width: 600px;
+    line-height: 1.8;
+    margin-bottom: 3rem;
+  }
+
+  .stat-row {
+    display: flex;
+    gap: 3rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-number {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--cyan);
+    line-height: 1;
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 0.4rem;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  .scroll-hint svg { opacity: 0.5; }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(6px); }
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  section.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .section-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 6rem 2rem;
+  }
+
+  .section-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .section-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 2px;
+    background: var(--cyan);
+  }
+
+  h2 {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 1.25rem;
+    max-width: 800px;
+  }
+
+  h2 span { color: var(--cyan); }
+
+  .insight-text {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 600px;
+    line-height: 1.8;
+    margin-bottom: 3rem;
+  }
+
+  .insight-text strong { color: var(--text); }
+
+  .chart-container {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    overflow: hidden;
+  }
+
+  .chart-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── SCROLLYTELLING SECTION ── */
+  .scrolly-section {
+    padding: 0;
+  }
+
+  .scrolly-section .section-inner {
+    padding: 0 2rem;
+  }
+
+  .scrolly-header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 6rem 2rem 3rem;
+  }
+
+  .scrolly-layout {
+    display: flex;
+    gap: 3rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    align-items: flex-start;
+  }
+
+  .sticky-chart {
+    position: sticky;
+    top: 10vh;
+    height: 80vh;
+    flex: 1;
+    min-width: 0;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sticky-chart-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+  }
+
+  #scrolly-svg-wrapper {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .steps {
+    flex: 0 0 320px;
+    padding-bottom: 40vh;
+  }
+
+  .step {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    padding: 2rem 0;
+    opacity: 0.3;
+    transition: opacity 0.4s ease;
+  }
+
+  .step.active { opacity: 1; }
+
+  .step-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-left: 3px solid transparent;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: border-color 0.4s ease;
+  }
+
+  .step.active .step-card {
+    border-left-color: var(--cyan);
+  }
+
+  .step-num {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 0.75rem;
+  }
+
+  .step-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.6rem;
+  }
+
+  .step-card p {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ── TOOLTIP ── */
+  .tooltip {
+    position: fixed;
+    background: #1e293b;
+    border: 1px solid rgba(34,211,238,0.3);
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.8rem;
+    color: var(--text);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 9999;
+    max-width: 220px;
+    line-height: 1.5;
+  }
+
+  .tooltip strong { color: var(--cyan); display: block; margin-bottom: 2px; }
+
+  /* ── CALLOUT BOX ── */
+  .callout {
+    background: var(--cyan-dim);
+    border: 1px solid rgba(34,211,238,0.25);
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    margin: 3rem 0;
+    max-width: 680px;
+  }
+
+  .callout-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 0.5rem;
+  }
+
+  .callout-text {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.5;
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 3rem 2rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.8;
+  }
+
+  footer a { color: var(--cyan); text-decoration: none; }
+
+  /* ── D3 ELEMENTS ── */
+  .axis text { fill: #64748b; font-size: 11px; font-family: 'Inter', system-ui; }
+  .axis line, .axis path { stroke: #1e293b; }
+  .axis-label { fill: #64748b; font-size: 11px; font-family: 'Inter', system-ui; }
+  .grid line { stroke: rgba(255,255,255,0.04); stroke-dasharray: 3,3; }
+  .grid path { stroke: none; }
+
+  @media (max-width: 768px) {
+    .scrolly-layout { flex-direction: column; }
+    .sticky-chart { position: relative; top: auto; height: 50vh; }
+    .steps { flex: none; }
+    .step { min-height: 60vh; }
+    .stat-row { gap: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════ HEADER ════════════════════════════════════ -->
+<header>
+  <p class="header-eyebrow">A Personal Data Story · Oct 2023 – Apr 2026</p>
+  <h1>How <span>AI</span> Ate<br>My Browser</h1>
+  <p class="header-lede">
+    I saved 1,043 links across 2.5 years. I didn't realize until I looked at the data
+    that one category had quietly taken over — eating into every other corner of my internet.
+    This is how it happened.
+  </p>
+  <div class="stat-row">
+    <div class="stat-item">
+      <span class="stat-number">1,043</span>
+      <span class="stat-label">Total bookmarks</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-number">289</span>
+      <span class="stat-label">AI tools saved</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-number">26</span>
+      <span class="stat-label">Categories</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-number">32%</span>
+      <span class="stat-label">AI share by 2025</span>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 3v10M3 9l5 5 5-5" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Scroll to explore
+  </div>
+</header>
+
+<!-- ════════════════════════════════════ SECTION 1: Overview ════════════════════════════════════ -->
+<section id="s1">
+  <div class="section-inner">
+    <p class="section-eyebrow">Section 01 — The Full Picture</p>
+    <h2>1,043 links.<br>One quiet <span>obsession</span>.</h2>
+    <p class="insight-text">
+      From October 2023 to April 2026, I saved 1,043 bookmarks across 26 categories —
+      SaaS tools, marketing resources, design references, dev docs. But one category kept
+      growing while the others held steady. <strong>AI tools went from 1 in 5 saves to nearly 1 in 3</strong>,
+      and the shift happened faster than I noticed while it was occurring.
+    </p>
+
+    <div class="callout">
+      <p class="callout-label">Key insight</p>
+      <p class="callout-text">AI's share of my bookmarks grew 60% in two years — from 20% to 32%.</p>
+    </div>
+
+    <div class="chart-container">
+      <p class="chart-title">AI vs. Non-AI Bookmarks by Year (% share)</p>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#22d3ee"></div>AI tools</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#334155"></div>Everything else</div>
+      </div>
+      <div id="chart-yearly"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ SECTION 2: Scrollytelling — Monthly Timeline ════════════════════════════════════ -->
+<section id="s2" class="scrolly-section">
+  <div class="scrolly-header">
+    <p class="section-eyebrow">Section 02 — The Inflection Point</p>
+    <h2>December 2023:<br>The month that <span>changed everything</span>.</h2>
+    <p class="insight-text">
+      The monthly data tells a story of a slow burn, then a sudden ignition. ChatGPT had launched
+      a year earlier, but something clicked in late 2023 — and my saving behavior shows exactly when.
+    </p>
+  </div>
+
+  <div class="scrolly-layout">
+    <div class="sticky-chart">
+      <p class="sticky-chart-title">Monthly AI vs Non-AI Bookmarks Saved</p>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#22d3ee"></div>AI saves</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1e3a5f"></div>Other saves</div>
+      </div>
+      <div id="scrolly-svg-wrapper"></div>
+    </div>
+
+    <div class="steps">
+      <div class="step active" data-step="0">
+        <div class="step-card">
+          <p class="step-num">Step 01 of 04</p>
+          <h3>A slow start</h3>
+          <p>In Oct–Nov 2023, AI bookmarks trickle in — 3 in October, 6 in November.
+          Interesting, but hardly dominant. The rest of the internet still had my attention.</p>
+        </div>
+      </div>
+      <div class="step" data-step="1">
+        <div class="step-card">
+          <p class="step-num">Step 02 of 04</p>
+          <h3>December 2023: The spike</h3>
+          <p>27 AI tools saved in a single month — more than the previous two months combined, times four.
+          ChatGPT's first anniversary, GPT-4 hype, and a wave of new wrappers hit simultaneously.</p>
+        </div>
+      </div>
+      <div class="step" data-step="2">
+        <div class="step-card">
+          <p class="step-num">Step 03 of 04</p>
+          <h3>Q1 2024: Sustained momentum</h3>
+          <p>Jan–Mar 2024 averaged 21 AI saves/month. The spike wasn't a one-off — it was
+          a new baseline. AI tools were now a permanent category, not a novelty.</p>
+        </div>
+      </div>
+      <div class="step" data-step="3">
+        <div class="step-card">
+          <p class="step-num">Step 04 of 04</p>
+          <h3>2025: Higher share, lower volume</h3>
+          <p>Total saves dropped in 2025, but AI's percentage kept climbing. By Oct 2025,
+          AI bookmarks outnumbered everything else in a single month — 13 vs 12.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ SECTION 3: Subcategories ════════════════════════════════════ -->
+<section id="s3">
+  <div class="section-inner">
+    <p class="section-eyebrow">Section 03 — The Sprawl</p>
+    <h2>From ChatGPT to <span>voice clones</span>:<br>AI diversified fast.</h2>
+    <p class="insight-text">
+      Early on, almost every AI bookmark was a general tool — a chatbot, a writing assistant, a wrapper.
+      Then specialization kicked in. <strong>Voice AI, image generators, video tools, and no-code builders</strong>
+      each carved out their own corner of the collection. The monolith fractured into a taxonomy.
+    </p>
+
+    <div class="chart-container">
+      <p class="chart-title">AI Bookmarks by Subcategory (total saves, all years)</p>
+      <div id="chart-categories"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ SECTION 4: Top Domains ════════════════════════════════════ -->
+<section id="s4">
+  <div class="section-inner">
+    <p class="section-eyebrow">Section 04 — The Final Count</p>
+    <h2>By 2025, <span>1 in 3 bookmarks</span><br>was an AI tool.</h2>
+    <p class="insight-text">
+      The top saved AI domains reveal a heavy skew toward infrastructure — the tools that enable other tools.
+      ChatGPT and Anthropic anchor the list, but <strong>niche players like Deepgram, Replicate, and v0.dev</strong>
+      show that the curiosity went deep, not just wide. This wasn't casual browsing. It was scouting.
+    </p>
+
+    <div class="callout">
+      <p class="callout-label">The trajectory</p>
+      <p class="callout-text">20% → 28% → 32% → still climbing. The slope only bent upward.</p>
+    </div>
+
+    <div class="chart-container">
+      <p class="chart-title">Top AI Domains Saved (bookmark count)</p>
+      <div id="chart-domains"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ FOOTER ════════════════════════════════════ -->
+<footer>
+  <p>Data: Personal browser export · 1,043 bookmarks · Oct 2023 – Apr 2026</p>
+  <p style="margin-top:0.5rem;">Built with <a href="https://d3js.org">D3.js v7</a> · Scrollytelling data story</p>
+</footer>
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════════════════════
+
+const yearlyData = [
+  { year: '2023', ai: 36, other: 142, total: 178 },
+  { year: '2024', ai: 126, other: 322, total: 448 },
+  { year: '2025', ai: 106, other: 223, total: 329 },
+  { year: '2026', ai: 21, other: 67, total: 88, partial: true }
+];
+
+const monthlyRaw = `2023-10,3,11
+2023-11,6,39
+2023-12,27,92
+2024-01,25,59
+2024-02,17,57
+2024-03,21,35
+2024-04,6,23
+2024-05,11,17
+2024-06,13,23
+2024-07,8,28
+2024-08,9,36
+2024-09,3,15
+2024-10,3,8
+2024-11,0,8
+2024-12,10,13
+2025-01,9,21
+2025-02,6,13
+2025-03,15,29
+2025-04,3,19
+2025-05,14,35
+2025-06,16,28
+2025-07,10,18
+2025-08,5,4
+2025-09,9,14
+2025-10,13,12
+2025-11,2,12
+2025-12,4,18
+2026-01,9,18
+2026-02,6,24
+2026-03,4,15
+2026-04,2,10`;
+
+const monthlyData = monthlyRaw.trim().split('\n').map(row => {
+  const [month, ai, other] = row.split(',');
+  return { month, ai: +ai, other: +other, total: +ai + +other };
+});
+
+const categoryData = [
+  { name: 'AI Tools (general)', count: 251 },
+  { name: 'No-Code / Builders', count: 9 },
+  { name: 'Voice / Audio AI', count: 12 },
+  { name: 'Image / Design AI', count: 7 },
+  { name: 'Video AI', count: 7 },
+  { name: 'AI / Prompt Education', count: 3 }
+].sort((a, b) => b.count - a.count);
+
+const domainData = [
+  { domain: 'chatgpt.com', count: 6 },
+  { domain: 'anthropic.com', count: 5 },
+  { domain: 'leadindicator.ai', count: 4 },
+  { domain: 'closerx.ai', count: 4 },
+  { domain: 'captions.ai', count: 3 },
+  { domain: 'beautiful.ai', count: 3 },
+  { domain: 'poly.ai', count: 3 },
+  { domain: 'deepgram.com', count: 3 },
+  { domain: 'v0.dev', count: 3 },
+  { domain: 'replicate.com', count: 2 },
+  { domain: 'perplexity.ai', count: 2 }
+].sort((a, b) => b.count - a.count);
+
+// ════════════════════════════════════════════════════════════════════
+// TOOLTIP
+// ════════════════════════════════════════════════════════════════════
+const tooltip = d3.select('#tooltip');
+
+function showTooltip(event, html) {
+  tooltip.style('opacity', 1).html(html)
+    .style('left', (event.clientX + 14) + 'px')
+    .style('top', (event.clientY - 32) + 'px');
+}
+
+function hideTooltip() {
+  tooltip.style('opacity', 0);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CHART 1 — Yearly Stacked Bar
+// ════════════════════════════════════════════════════════════════════
+function buildYearlyChart() {
+  const el = document.getElementById('chart-yearly');
+  const margin = { top: 20, right: 60, bottom: 50, left: 60 };
+  const totalW = el.clientWidth || 700;
+  const totalH = 320;
+  const width = totalW - margin.left - margin.right;
+  const height = totalH - margin.top - margin.bottom;
+
+  const svg = d3.select('#chart-yearly')
+    .append('svg')
+    .attr('width', totalW)
+    .attr('height', totalH);
+
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleBand()
+    .domain(yearlyData.map(d => d.year))
+    .range([0, width])
+    .padding(0.35);
+
+  const y = d3.scaleLinear()
+    .domain([0, 100])
+    .range([height, 0]);
+
+  // grid
+  g.append('g').attr('class', 'grid')
+    .call(d3.axisLeft(y).tickSize(-width).tickFormat('').ticks(5));
+
+  // axes
+  g.append('g').attr('class', 'axis')
+    .attr('transform', `translate(0,${height})`)
+    .call(d3.axisBottom(x));
+
+  g.append('g').attr('class', 'axis')
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + '%'));
+
+  // axis label
+  g.append('text').attr('class', 'axis-label')
+    .attr('transform', `translate(${width / 2}, ${height + 42})`)
+    .attr('text-anchor', 'middle')
+    .text('Year');
+
+  g.append('text').attr('class', 'axis-label')
+    .attr('transform', 'rotate(-90)')
+    .attr('y', -48).attr('x', -height / 2)
+    .attr('text-anchor', 'middle')
+    .text('Share of total saves (%)');
+
+  // Other bars
+  g.selectAll('.bar-other')
+    .data(yearlyData)
+    .join('rect')
+    .attr('class', 'bar-other')
+    .attr('x', d => x(d.year))
+    .attr('y', d => y((d.other / d.total) * 100))
+    .attr('width', x.bandwidth())
+    .attr('height', d => height - y((d.other / d.total) * 100))
+    .attr('fill', '#1e3a5f')
+    .attr('rx', 3)
+    .style('cursor', 'pointer')
+    .on('mousemove', (event, d) => showTooltip(event,
+      `<strong>${d.year}${d.partial ? ' (partial)' : ''}</strong>Other: ${d.other} saves (${Math.round(d.other/d.total*100)}%)`))
+    .on('mouseleave', hideTooltip);
+
+  // AI bars (stacked on top conceptually — show as % of total)
+  g.selectAll('.bar-ai')
+    .data(yearlyData)
+    .join('rect')
+    .attr('class', 'bar-ai')
+    .attr('x', d => x(d.year))
+    .attr('y', d => y((d.ai / d.total) * 100))
+    .attr('width', x.bandwidth())
+    .attr('height', d => height - y((d.ai / d.total) * 100))
+    .attr('fill', '#22d3ee')
+    .attr('rx', 3)
+    .attr('opacity', 0.85)
+    .style('cursor', 'pointer')
+    .on('mousemove', (event, d) => showTooltip(event,
+      `<strong>${d.year}${d.partial ? ' (partial)' : ''}</strong>AI saves: ${d.ai} (${Math.round(d.ai/d.total*100)}% of ${d.total} total)`))
+    .on('mouseleave', hideTooltip);
+
+  // value labels on AI bars
+  g.selectAll('.bar-label')
+    .data(yearlyData)
+    .join('text')
+    .attr('x', d => x(d.year) + x.bandwidth() / 2)
+    .attr('y', d => y((d.ai / d.total) * 100) - 6)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#22d3ee')
+    .attr('font-size', '12px')
+    .attr('font-weight', '600')
+    .text(d => Math.round(d.ai / d.total * 100) + '%');
+
+  // partial year note
+  g.append('text')
+    .attr('x', x('2026') + x.bandwidth() / 2)
+    .attr('y', height + 35)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#64748b')
+    .attr('font-size', '9px')
+    .text('partial');
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CHART 2 — Scrollytelling Monthly Area/Bar
+// ════════════════════════════════════════════════════════════════════
+let scrollyChart = null;
+
+function buildScrollyChart() {
+  const wrapper = document.getElementById('scrolly-svg-wrapper');
+  const margin = { top: 10, right: 30, bottom: 60, left: 50 };
+  const totalW = wrapper.clientWidth || 560;
+  const totalH = wrapper.clientHeight || 480;
+  const width = totalW - margin.left - margin.right;
+  const height = totalH - margin.top - margin.bottom;
+
+  const svg = d3.select('#scrolly-svg-wrapper')
+    .append('svg')
+    .attr('width', totalW)
+    .attr('height', totalH);
+
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleBand()
+    .domain(monthlyData.map(d => d.month))
+    .range([0, width])
+    .padding(0.15);
+
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(monthlyData, d => d.total) * 1.1])
+    .range([height, 0]);
+
+  // grid
+  g.append('g').attr('class', 'grid')
+    .call(d3.axisLeft(y).tickSize(-width).tickFormat('').ticks(5));
+
+  // x axis — show quarterly labels to avoid crowding
+  const xTickVals = monthlyData
+    .filter((d, i) => i % 3 === 0)
+    .map(d => d.month);
+
+  g.append('g').attr('class', 'axis')
+    .attr('transform', `translate(0,${height})`)
+    .call(d3.axisBottom(x)
+      .tickValues(xTickVals)
+      .tickFormat(d => {
+        const [y, m] = d.split('-');
+        const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m - 1];
+        return mo + ' ' + y.slice(2);
+      }))
+    .selectAll('text')
+    .attr('transform', 'rotate(-45)')
+    .style('text-anchor', 'end')
+    .style('font-size', '10px');
+
+  g.append('g').attr('class', 'axis')
+    .call(d3.axisLeft(y).ticks(5));
+
+  // axis labels
+  g.append('text').attr('class', 'axis-label')
+    .attr('transform', `translate(${width / 2}, ${height + 56})`)
+    .attr('text-anchor', 'middle')
+    .text('Month');
+
+  g.append('text').attr('class', 'axis-label')
+    .attr('transform', 'rotate(-90)')
+    .attr('y', -40).attr('x', -height / 2)
+    .attr('text-anchor', 'middle')
+    .text('Bookmarks saved');
+
+  // other bars
+  const otherBars = g.selectAll('.bar-other-m')
+    .data(monthlyData)
+    .join('rect')
+    .attr('class', 'bar-other-m')
+    .attr('x', d => x(d.month))
+    .attr('y', d => y(d.other))
+    .attr('width', x.bandwidth())
+    .attr('height', d => height - y(d.other))
+    .attr('fill', '#1e3a5f')
+    .attr('rx', 2)
+    .on('mousemove', (event, d) => showTooltip(event,
+      `<strong>${d.month}</strong>Other: ${d.other} · AI: ${d.ai}`))
+    .on('mouseleave', hideTooltip);
+
+  // AI bars
+  const aiBars = g.selectAll('.bar-ai-m')
+    .data(monthlyData)
+    .join('rect')
+    .attr('class', 'bar-ai-m')
+    .attr('x', d => x(d.month))
+    .attr('y', d => y(d.other + d.ai))
+    .attr('width', x.bandwidth())
+    .attr('height', d => height - y(d.ai))
+    .attr('fill', '#22d3ee')
+    .attr('opacity', 0.75)
+    .attr('rx', 2)
+    .on('mousemove', (event, d) => showTooltip(event,
+      `<strong>${d.month}</strong>AI saves: ${d.ai}<br>Other saves: ${d.other}<br>Total: ${d.total}`))
+    .on('mouseleave', hideTooltip);
+
+  // highlight rect (invisible by default)
+  const highlight = g.append('rect')
+    .attr('class', 'highlight-bar')
+    .attr('fill', 'none')
+    .attr('stroke', '#22d3ee')
+    .attr('stroke-width', 2)
+    .attr('rx', 3)
+    .attr('opacity', 0);
+
+  // annotation group
+  const annotGroup = g.append('g').attr('class', 'annotation').attr('opacity', 0);
+  const annotLine = annotGroup.append('line').attr('stroke', '#22d3ee').attr('stroke-width', 1.5).attr('stroke-dasharray', '4,3');
+  const annotRect = annotGroup.append('rect').attr('fill', '#0f172a').attr('stroke', 'rgba(34,211,238,0.4)').attr('stroke-width', 1).attr('rx', 4);
+  const annotText1 = annotGroup.append('text').attr('fill', '#22d3ee').attr('font-size', '11px').attr('font-weight', '700');
+  const annotText2 = annotGroup.append('text').attr('fill', '#94a3b8').attr('font-size', '10px');
+
+  // step highlight ranges
+  const stepRanges = [
+    ['2023-10', '2023-11'],           // step 0: slow start
+    ['2023-12', '2023-12'],           // step 1: the spike
+    ['2024-01', '2024-03'],           // step 2: Q1 2024
+    ['2025-01', '2026-04']            // step 3: 2025+
+  ];
+
+  function updateScrollyStep(stepIdx) {
+    const [start, end] = stepRanges[stepIdx];
+    const startI = monthlyData.findIndex(d => d.month === start);
+    const endI = monthlyData.findIndex(d => d.month === end);
+
+    // dim everything
+    otherBars.attr('opacity', d => {
+      const i = monthlyData.indexOf(d);
+      return (i >= startI && i <= endI) ? 1 : 0.2;
+    });
+    aiBars.attr('opacity', d => {
+      const i = monthlyData.indexOf(d);
+      return (i >= startI && i <= endI) ? 0.85 : 0.15;
+    });
+
+    // annotation for step 1 (Dec 2023 spike)
+    if (stepIdx === 1) {
+      const dec = monthlyData.find(d => d.month === '2023-12');
+      const bx = x('2023-12') + x.bandwidth() / 2;
+      const by = y(dec.other + dec.ai);
+      const ax = bx + 30;
+      const ay = by - 30;
+
+      annotLine
+        .attr('x1', bx).attr('y1', by)
+        .attr('x2', ax).attr('y2', ay);
+
+      const labelText = '27 AI saves';
+      annotRect
+        .attr('x', ax - 4).attr('y', ay - 16)
+        .attr('width', 80).attr('height', 34);
+      annotText1
+        .attr('x', ax + 36).attr('y', ay - 3)
+        .attr('text-anchor', 'middle')
+        .text(labelText);
+      annotText2
+        .attr('x', ax + 36).attr('y', ay + 12)
+        .attr('text-anchor', 'middle')
+        .text('in one month');
+
+      annotGroup.transition().duration(400).attr('opacity', 1);
+    } else {
+      annotGroup.transition().duration(200).attr('opacity', 0);
+    }
+  }
+
+  scrollyChart = { updateScrollyStep };
+  updateScrollyStep(0);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CHART 3 — Category Horizontal Bar
+// ════════════════════════════════════════════════════════════════════
+function buildCategoryChart() {
+  const el = document.getElementById('chart-categories');
+  const margin = { top: 10, right: 80, bottom: 50, left: 160 };
+  const totalW = el.clientWidth || 700;
+  const totalH = 320;
+  const width = totalW - margin.left - margin.right;
+  const height = totalH - margin.top - margin.bottom;
+
+  const svg = d3.select('#chart-categories')
+    .append('svg')
+    .attr('width', totalW)
+    .attr('height', totalH);
+
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const y = d3.scaleBand()
+    .domain(categoryData.map(d => d.name))
+    .range([0, height])
+    .padding(0.3);
+
+  const x = d3.scaleLinear()
+    .domain([0, d3.max(categoryData, d => d.count) * 1.12])
+    .range([0, width]);
+
+  // grid
+  g.append('g').attr('class', 'grid')
+    .call(d3.axisTop(x).tickSize(-height).tickFormat('').ticks(5));
+
+  // axes
+  g.append('g').attr('class', 'axis')
+    .attr('transform', `translate(0,${height})`)
+    .call(d3.axisBottom(x).ticks(5));
+
+  g.append('g').attr('class', 'axis')
+    .call(d3.axisLeft(y).tickSize(0))
+    .select('.domain').remove();
+
+  g.append('text').attr('class', 'axis-label')
+    .attr('x', width / 2)
+    .attr('y', height + 42)
+    .attr('text-anchor', 'middle')
+    .text('Total bookmarks saved');
+
+  // color scale
+  const colors = ['#22d3ee', '#38bdf8', '#7dd3fc', '#93c5fd', '#a5b4fc', '#c4b5fd'];
+
+  // bars
+  const bars = g.selectAll('.cat-bar')
+    .data(categoryData)
+    .join('rect')
+    .attr('class', 'cat-bar')
+    .attr('y', d => y(d.name))
+    .attr('x', 0)
+    .attr('height', y.bandwidth())
+    .attr('rx', 3)
+    .attr('fill', (d, i) => colors[i])
+    .attr('opacity', 0.85)
+    .attr('width', 0)
+    .style('cursor', 'pointer')
+    .on('mousemove', (event, d) => showTooltip(event,
+      `<strong>${d.name}</strong>${d.count} bookmarks saved`))
+    .on('mouseleave', hideTooltip);
+
+  // animate in when visible
+  bars.transition().duration(800).delay((d, i) => i * 80)
+    .attr('width', d => x(d.count));
+
+  // value labels
+  g.selectAll('.cat-label')
+    .data(categoryData)
+    .join('text')
+    .attr('y', d => y(d.name) + y.bandwidth() / 2 + 4)
+    .attr('x', d => x(d.count) + 6)
+    .attr('fill', '#94a3b8')
+    .attr('font-size', '11px')
+    .text(d => d.count);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CHART 4 — Top Domains Dot Plot
+// ════════════════════════════════════════════════════════════════════
+function buildDomainsChart() {
+  const el = document.getElementById('chart-domains');
+  const margin = { top: 20, right: 80, bottom: 50, left: 160 };
+  const totalW = el.clientWidth || 700;
+  const totalH = 360;
+  const width = totalW - margin.left - margin.right;
+  const height = totalH - margin.top - margin.bottom;
+
+  const svg = d3.select('#chart-domains')
+    .append('svg')
+    .attr('width', totalW)
+    .attr('height', totalH);
+
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const y = d3.scaleBand()
+    .domain(domainData.map(d => d.domain))
+    .range([0, height])
+    .padding(0.4);
+
+  const x = d3.scaleLinear()
+    .domain([0, d3.max(domainData, d => d.count) + 1])
+    .range([0, width]);
+
+  // grid
+  g.append('g').attr('class', 'grid')
+    .call(d3.axisTop(x).tickSize(-height).tickFormat('').ticks(6));
+
+  // axes
+  g.append('g').attr('class', 'axis')
+    .attr('transform', `translate(0,${height})`)
+    .call(d3.axisBottom(x).ticks(6).tickFormat(d => d === 0 ? '' : d));
+
+  g.append('g').attr('class', 'axis')
+    .call(d3.axisLeft(y).tickSize(0))
+    .select('.domain').remove();
+
+  g.append('text').attr('class', 'axis-label')
+    .attr('x', width / 2)
+    .attr('y', height + 42)
+    .attr('text-anchor', 'middle')
+    .text('Times saved');
+
+  // connector lines
+  g.selectAll('.connector')
+    .data(domainData)
+    .join('line')
+    .attr('x1', 0)
+    .attr('x2', d => x(d.count))
+    .attr('y1', d => y(d.domain) + y.bandwidth() / 2)
+    .attr('y2', d => y(d.domain) + y.bandwidth() / 2)
+    .attr('stroke', '#1e3a5f')
+    .attr('stroke-width', 1.5);
+
+  // dots
+  g.selectAll('.domain-dot')
+    .data(domainData)
+    .join('circle')
+    .attr('cx', d => x(d.count))
+    .attr('cy', d => y(d.domain) + y.bandwidth() / 2)
+    .attr('r', 0)
+    .attr('fill', '#22d3ee')
+    .attr('opacity', 0.9)
+    .style('cursor', 'pointer')
+    .on('mousemove', (event, d) => showTooltip(event,
+      `<strong>${d.domain}</strong>Saved ${d.count} time${d.count > 1 ? 's' : ''}`))
+    .on('mouseleave', hideTooltip)
+    .transition().duration(600).delay((d, i) => i * 60)
+    .attr('r', 6);
+
+  // count labels
+  g.selectAll('.domain-label')
+    .data(domainData)
+    .join('text')
+    .attr('x', d => x(d.count) + 10)
+    .attr('y', d => y(d.domain) + y.bandwidth() / 2 + 4)
+    .attr('fill', '#94a3b8')
+    .attr('font-size', '11px')
+    .text(d => d.count);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SCROLL OBSERVER — section fade-ins
+// ════════════════════════════════════════════════════════════════════
+const sectionObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      sectionObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('section').forEach(s => sectionObserver.observe(s));
+
+// ════════════════════════════════════════════════════════════════════
+// SCROLLYTELLING — step observer
+// ════════════════════════════════════════════════════════════════════
+const stepObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      e.target.classList.add('active');
+      const stepIdx = +e.target.dataset.step;
+      if (scrollyChart) scrollyChart.updateScrollyStep(stepIdx);
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.step').forEach(s => stepObserver.observe(s));
+
+// ════════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  buildYearlyChart();
+  buildScrollyChart();
+  buildCategoryChart();
+  buildDomainsChart();
+});
+</script>
+</body>
+</html>

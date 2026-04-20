@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: bookmark-charts-api
+    runtime: node
+    rootDir: api
+    plan: starter
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: RESEND_API_KEY
+        sync: false
+      - key: NOTIFY_EMAIL
+        value: support@callspot.ai
+      - key: FROM_EMAIL
+        value: Bookmark Charts <noreply@coder1.dev>
+      - key: ALLOWED_ORIGINS
+        value: https://bookmark-charts.onrender.com,https://coder1.ai,https://www.coder1.ai
+      - key: ADMIN_KEY
+        sync: false
+      - key: LEADSPOT_URL
+        sync: false
+      - key: LEADSPOT_KEY
+        sync: false
+
+  - type: web
+    name: bookmark-charts
+    runtime: static
+    rootDir: site
+    buildCommand: ""
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+    routes:
+      - type: rewrite
+        source: /bookmarks
+        destination: /app.html
